@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>套圈圈遊戲 - 最終版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding: 10px;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            text-align: center;
+            transform: scale(0.9);
+            transform-origin: center;
+        }
+        
+        h1 {
+            color: #5d5fef;
+            margin-bottom: 10px;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .level {
+            color: #ff4757;
+            font-size: 18px;
+        }
+        
+        .target {
+            color: #ff4757;
+            font-size: 18px;
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .score {
+            color: #2ed573;
+            font-size: 18px;
+        }
+        
+        .time {
+            color: #3742fa;
+            font-size: 18px;
+        }
+        
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background-color: #f1f2f6;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 3px solid #5d5fef;
+            touch-action: none;
+            transition: all 0.5s ease;
+        }
+
+        .level-1 {
+            background: linear-gradient(135deg, #f1f2f6, #dfe4ea);
+        }
+        
+        .level-2 {
+            background: linear-gradient(135deg, #e8f4f8, #c7ecee);
+            border-color: #0984e3;
+        }
+        
+        .number {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        
+        .number-0 {
+            background-color: #70a1ff;
+            color: white;
+        }
+        
+        .number-1 {
+            background-color: #ff9f1a;
+            color: white;
+        }
+        
+        .number.selected {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.7);
+            z-index: 3;
+        }
+        
+        .number.correct {
+            animation: correctGlow 0.6s ease;
+        }
+        
+        .number.wrong {
+            animation: wrongShake 0.6s ease;
+        }
+        
+        .selection-circle {
+            position: absolute;
+            border: 3px solid #ff4757;
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 4;
+            background-color: rgba(255, 71, 87, 0.1);
+            transition: all 0.1s ease;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        #startBtn {
+            background-color: #2ed573;
+            color: white;
+        }
+        
+        #resetBtn {
+            background-color: #ff4757;
+            color: white;
+        }
+        
+        #nextLevelBtn {
+            background-color: #3742fa;
+            color: white;
+            display: none;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .game-over, .level-complete {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+            z-index: 100;
+            border-radius: 15px;
+        }
+        
+        .final-score {
+            font-size: 30px;
+            margin: 15px 0;
+            color: #ffdd59;
+        }
+        
+        .instructions {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #57606f;
+            line-height: 1.5;
+            text-align: center;
+        }
+        
+        .touch-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #a4b0be;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .score-feedback {
+            position: absolute;
+            font-size: 16px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+            animation: floatUp 1s ease-out forwards;
+        }
+        
+        @keyframes correctGlow {
+            0% { 
+                transform: scale(1);
+                box-shadow: 0 0 0px rgba(46, 213, 115, 0.8);
+            }
+            50% { 
+                transform: scale(1.3);
+                box-shadow: 0 0 20px rgba(46, 213, 115, 0.8);
+            }
+            100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0px rgba(46, 213, 115, 0.8);
+            }
+        }
+        
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0) scale(1); }
+            25% { transform: translateX(-5px) scale(0.9); }
+            75% { transform: translateX(5px) scale(0.9); }
+        }
+        
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>套圈圈遊戲</h1>
+        
+        <div class="game-header">
+            <div class="level">關卡: <span id="currentLevel">1</span>/2</div>
+            <div class="target">圈數字: <span id="targetNumber">1</span></div>
+        </div>
+        
+        <div class="game-stats">
+            <div class="time">時間: <span id="time">60</span>秒</div>
+            <div class="score">分數: <span id="score">0</span></div>
+        </div>
+        
+        <div class="game-area level-1" id="gameArea">
+            <div class="touch-hint" id="touchHint">手指滑動把紅色圈圈套住指定數字</div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">開始遊戲</button>
+            <button id="resetBtn">重新開始</button>
+            <button id="nextLevelBtn">第二關</button>
+        </div>
+        
+        <div class="instructions">
+            <p id="levelInstructions">第一關: 三排0與1組合，套中目標+10分，套錯-10分</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const gameArea = document.getElementById('gameArea');
+            const targetNumberElement = document.getElementById('targetNumber');
+            const scoreElement = document.getElementById('score');
+            const timeElement = document.getElementById('time');
+            const currentLevelElement = document.getElementById('currentLevel');
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const nextLevelBtn = document.getElementById('nextLevelBtn');
+            const touchHint = document.getElementById('touchHint');
+            const levelInstructions = document.getElementById('levelInstructions');
+            
+            let score = 0;
+            let timeLeft = 60;
+            let gameActive = false;
+            let timer;
+            let numbers = [];
+            let targetNumber = 1;
+            let selectionCircle = null;
+            let isSelecting = false;
+            let startX, startY;
+            let currentRadius = 0;
+            let currentLevel = 1;
+            let numberMoveIntervals = [];
+            let comboCount = 0;
+            let comboTimeout;
+            
+            const levelSettings = {
+                1: { 
+                    time: 60, 
+                    instructions: "第一關: 三排0與1組合，套中目標+10分，套錯-10分",
+                    moving: false
+                },
+                2: { 
+                    time: 45, 
+                    instructions: "第二關: 數字會飄浮運動！套中目標+10分，套錯-10分",
+                    moving: true
+                }
+            };
+            
+            function initGame() {
+                gameArea.innerHTML = '';
+                numbers = [];
+                comboCount = 0;
+                
+                numberMoveIntervals.forEach(interval => clearInterval(interval));
+                numberMoveIntervals = [];
+                
+                gameArea.className = 'game-area level-' + currentLevel;
+                levelInstructions.textContent = levelSettings[currentLevel].instructions;
+                currentLevelElement.textContent = currentLevel;
+                
+                const numberSize = 40;
+                const gameWidth = gameArea.offsetWidth;
+                const gameHeight = gameArea.offsetHeight;
+                
+                if (currentLevel === 1) {
+                    createLevel1Numbers(gameWidth, gameHeight, numberSize);
+                } else {
+                    createLevel2Numbers(gameWidth, gameHeight, numberSize);
+                }
+                
+                targetNumber = Math.round(Math.random());
+                targetNumberElement.textContent = targetNumber;
+                
+                timeLeft = levelSettings[currentLevel].time;
+                scoreElement.textContent = score;
+                timeElement.textContent = timeLeft;
+                
+                selectionCircle = document.createElement('div');
+                selectionCircle.className = 'selection-circle';
+                selectionCircle.style.display = 'none';
+                gameArea.appendChild(selectionCircle);
+                
+                gameArea.appendChild(touchHint);
+                
+                if (currentLevel === 2) {
+                    startNumberMovement();
+                }
+            }
+            
+            function createLevel1Numbers(gameWidth, gameHeight, numberSize) {
+                const rows = 3;
+                const cols = 6;
+                const horizontalSpacing = gameWidth / (cols + 1);
+                const verticalSpacing = gameHeight / (rows + 1);
+                
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        const numberValue = Math.round(Math.random());
+                        const number = document.createElement('div');
+                        number.className = `number number-${numberValue}`;
+                        number.textContent = numberValue;
+                        
+                        const x = (col + 1) * horizontalSpacing - numberSize/2;
+                        const y = (row + 1) * verticalSpacing - numberSize/2;
+                        
+                        number.style.left = `${x}px`;
+                        number.style.top = `${y}px`;
+                        number.style.width = `${numberSize}px`;
+                        number.style.height = `${numberSize}px`;
+                        
+                        gameArea.appendChild(number);
+                        numbers.push({
+                            element: number,
+                            value: numberValue,
+                            x: x + numberSize/2,
+                            y: y + numberSize/2,
+                            radius: numberSize/2,
+                            width: numberSize,
+                            height: numberSize
+                        });
+                    }
+                }
+            }
+            
+            function createLevel2Numbers(gameWidth, gameHeight, numberSize) {
+                const numberCount = 15;
+                
+                for (let i = 0; i < numberCount; i++) {
+                    const numberValue = Math.round(Math.random());
+                    const number = document.createElement('div');
+                    number.className = `number number-${numberValue}`;
+                    number.textContent = numberValue;
+                    
+                    const x = Math.random() * (gameWidth - numberSize);
+                    const y = Math.random() * (gameHeight - numberSize);
+                    
+                    number.style.left = `${x}px`;
+                    number.style.top = `${y}px`;
+                    number.style.width = `${numberSize}px`;
+                    number.style.height = `${numberSize}px`;
+                    
+                    gameArea.appendChild(number);
+                    
+                    const moveData = {
+                        baseX: x,
+                        baseY: y,
+                        amplitudeX: 15 + Math.random() * 25,
+                        amplitudeY: 15 + Math.random() * 25,
+                        speedX: 0.3 + Math.random() * 0.7,
+                        speedY: 0.3 + Math.random() * 0.7,
+                        angleX: Math.random() * Math.PI * 2,
+                        angleY: Math.random() * Math.PI * 2
+                    };
+                    
+                    numbers.push({
+                        element: number,
+                        value: numberValue,
+                        x: x + numberSize/2,
+                        y: y + numberSize/2,
+                        radius: numberSize/2,
+                        width: numberSize,
+                        height: numberSize,
+                        moveData: moveData
+                    });
+                }
+            }
+            
+            function startNumberMovement() {
+                numbers.forEach(number => {
+                    const interval = setInterval(() => {
+                        if (!gameActive) return;
+                        
+                        const move = number.moveData;
+                        move.angleX += move.speedX * 0.05;
+                        move.angleY += move.speedY * 0.05;
+                        
+                        const newX = move.baseX + Math.sin(move.angleX) * move.amplitudeX;
+                        const newY = move.baseY + Math.cos(move.angleY) * move.amplitudeY;
+                        
+                        const boundedX = Math.max(0, Math.min(newX, gameArea.offsetWidth - number.width));
+                        const boundedY = Math.max(0, Math.min(newY, gameArea.offsetHeight - number.height));
+                        
+                        number.element.style.left = `${boundedX}px`;
+                        number.element.style.top = `${boundedY}px`;
+                        
+                        number.x = boundedX + number.radius;
+                        number.y = boundedY + number.radius;
+                        
+                    }, 50);
+                    numberMoveIntervals.push(interval);
+                });
+            }
+            
+            function startGame() {
+                if (gameActive) return;
+                
+                gameActive = true;
+                startBtn.disabled = true;
+                nextLevelBtn.style.display = 'none';
+                touchHint.style.display = 'none';
+                
+                timer = setInterval(function() {
+                    timeLeft--;
+                    timeElement.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        if (currentLevel < 2) {
+                            levelComplete();
+                        } else {
+                            endGame();
+                        }
+                    }
+                }, 1000);
+            }
+            
+            function levelComplete() {
+                gameActive = false;
+                clearInterval(timer);
+                
+                const levelCompleteScreen = document.createElement('div');
+                levelCompleteScreen.className = 'level-complete';
+                levelCompleteScreen.innerHTML = `
+                    <h2>恭喜！第一關完成！</h2>
+                    <div class="final-score">目前分數: ${score}</div>
+                    <button id="continueBtn">進入第二關</button>
+                `;
+                gameArea.appendChild(levelCompleteScreen);
+                
+                document.getElementById('continueBtn').addEventListener('click', function() {
+                    gameArea.removeChild(levelCompleteScreen);
+                    currentLevel++;
+                    initGame();
+                    startBtn.disabled = false;
+                });
+            }
+            
+            function endGame() {
+                gameActive = false;
+                clearInterval(timer);
+                startBtn.disabled = false;
+                touchHint.style.display = 'block';
+                
+                const gameOver = document.createElement('div');
+                gameOver.className = 'game-over';
+                gameOver.innerHTML = `
+                    <h2>遊戲結束!</h2>
+                    <div class="final-score">最終分數: ${score}</div>
+                    <div>完成關卡: ${currentLevel}/2</div>
+                    <button id="playAgainBtn">再玩一次</button>
+                `;
+                gameArea.appendChild(gameOver);
+                
+                document.getElementById('playAgainBtn').addEventListener('click', function() {
+                    gameArea.removeChild(gameOver);
+                    currentLevel = 1;
+                    score = 0;
+                    initGame();
+                });
+            }
+            
+            function handleTouchStart(e) {
+                if (!gameActive) return;
+                
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = gameArea.getBoundingClientRect();
+                startX = touch.clientX - rect.left;
+                startY = touch.clientY - rect.top;
+                
+                isSelecting = true;
+                selectionCircle.style.display = 'block';
+                selectionCircle.style.left = `${startX}px`;
+                selectionCircle.style.top = `${startY}px`;
+                selectionCircle.style.width = '0px';
+                selectionCircle.style.height = '0px';
+                currentRadius = 0;
+            }
+            
+            function handleTouchMove(e) {
+                if (!gameActive || !isSelecting) return;
+                
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = gameArea.getBoundingClientRect();
+                const currentX = touch.clientX - rect.left;
+                const currentY = touch.clientY - rect.top;
+                
+                currentRadius = Math.sqrt(
+                    Math.pow(currentX - startX, 2) + 
+                    Math.pow(currentY - startY, 2)
+                );
+                
+                selectionCircle.style.width = `${currentRadius * 2}px`;
+                selectionCircle.style.height = `${currentRadius * 2}px`;
+                selectionCircle.style.left = `${startX}px`;
+                selectionCircle.style.top = `${startY}px`;
+                
+                checkSelectionInProgress(startX, startY, currentRadius);
+            }
+            
+            function handleTouchEnd(e) {
+                if (!gameActive || !isSelecting) return;
+                
+                checkFinalSelection();
+                resetSelection();
+            }
+            
+            function handleMouseDown(e) {
+                if (!gameActive) return;
+                
+                const rect = gameArea.getBoundingClientRect();
+                startX = e.clientX - rect.left;
+                startY = e.clientY - rect.top;
+                
+                isSelecting = true;
+                selectionCircle.style.display = 'block';
+                selectionCircle.style.left = `${startX}px`;
+                selectionCircle.style.top = `${startY}px`;
+                selectionCircle.style.width = '0px';
+                selectionCircle.style.height = '0px';
+                currentRadius = 0;
+            }
+            
+            function handleMouseMove(e) {
+                if (!gameActive || !isSelecting) return;
+                
+                const rect = gameArea.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+                
+                currentRadius = Math.sqrt(
+                    Math.pow(currentX - startX, 2) + 
+                    Math.pow(currentY - startY, 2)
+                );
+                
+                selectionCircle.style.width = `${currentRadius * 2}px`;
+                selectionCircle.style.height = `${currentRadius * 2}px`;
+                selectionCircle.style.left = `${startX}px`;
+                selectionCircle.style.top = `${startY}px`;
+                
+                checkSelectionInProgress(startX, startY, currentRadius);
+            }
+            
+            function handleMouseUp(e) {
+                if (!gameActive || !isSelecting) return;
+                
+                checkFinalSelection();
+                resetSelection();
+            }
+            
+            function resetSelection() {
+                isSelecting = false;
+                selectionCircle.style.display = 'none';
+                
+                numbers.forEach(number => {
+                    number.element.classList.remove('selected');
+                });
+            }
+            
+            function checkSelectionInProgress(centerX, centerY, radius) {
+                numbers.forEach(number => {
+                    const distance = Math.sqrt(
+                        Math.pow(number.x - centerX, 2) + 
+                        Math.pow(number.y - centerY, 2)
+                    );
+                    
+                    const isSelected = (distance + number.radius * 0.8) <= radius;
+                    
+                    if (isSelected) {
+                        number.element.classList.add('selected');
+                    } else {
+                        number.element.classList.remove('selected');
+                    }
+                });
+            }
+            
+            function checkFinalSelection() {
+                let selectedNumbers = [];
+                let correctSelections = 0;
+                let wrongSelections = 0;
+                
+                numbers.forEach(number => {
+                    const distance = Math.sqrt(
+                        Math.pow(number.x - startX, 2) + 
+                        Math.pow(number.y - startY, 2)
+                    );
+                    
+                    const isSelected = (distance + number.radius * 0.8) <= currentRadius;
+                    
+                    if (isSelected) {
+                        selectedNumbers.push(number);
+                        
+                        if (number.value === targetNumber) {
+                            correctSelections++;
+                        } else {
+                            wrongSelections++;
+                        }
+                    }
+                });
+                
+                let roundScore = 0;
+                
+                if (correctSelections > 0) {
+                    roundScore += correctSelections * 10;
+                    
+                    comboCount++;
+                    if (comboCount >= 2) {
+                        roundScore += (comboCount - 1) * 5;
+                    }
+                    
+                    clearTimeout(comboTimeout);
+                    comboTimeout = setTimeout(() => {
+                        comboCount = 0;
+                    }, 2000);
+                } else {
+                    comboCount = 0;
+                }
+                
+                if (wrongSelections > 0) {
+                    roundScore -= wrongSelections * 10;
+                }
+                
+                score += roundScore;
+                scoreElement.textContent = score;
+                
+                if (roundScore > 0) {
+                    showScoreFeedback(startX, startY, `+${roundScore}`, '#2ed573');
+                } else if (roundScore < 0) {
+                    showScoreFeedback(startX, startY, `${roundScore}`, '#ff4757');
+                }
+                
+                selectedNumbers.forEach(number => {
+                    if (number.value === targetNumber) {
+                        number.element.classList.add('correct');
+                        setTimeout(() => {
+                            number.element.classList.remove('correct');
+                        }, 600);
+                    } else {
+                        number.element.classList.add('wrong');
+                        setTimeout(() => {
+                            number.element.classList.remove('wrong');
+                        }, 600);
+                    }
+                });
+                
+                if (correctSelections > 0) {
+                    targetNumber = Math.round(Math.random());
+                    targetNumberElement.textContent = targetNumber;
+                }
+            }
+            
+            function showScoreFeedback(x, y, text, color) {
+                const feedback = document.createElement('div');
+                feedback.className = 'score-feedback';
+                feedback.textContent = text;
+                feedback.style.color = color;
+                feedback.style.left = `${x}px`;
+                feedback.style.top = `${y}px`;
+                
+                gameArea.appendChild(feedback);
+                
+                setTimeout(() => {
+                    if (feedback.parentNode) {
+                        gameArea.removeChild(feedback);
+                    }
+                }, 1000);
+            }
+            
+            startBtn.addEventListener('click', startGame);
+            resetBtn.addEventListener('click', function() {
+                clearInterval(timer);
+                clearTimeout(comboTimeout);
+                gameActive = false;
+                startBtn.disabled = false;
+                touchHint.style.display = 'block';
+                
+                const gameOver = document.querySelector('.game-over');
+                if (gameOver) gameArea.removeChild(gameOver);
+                
+                const levelComplete = document.querySelector('.level-complete');
+                if (levelComplete) gameArea.removeChild(levelComplete);
+                
+                score = 0;
+                currentLevel = 1;
+                initGame();
+            });
+            
+            nextLevelBtn.addEventListener('click', function() {
+                currentLevel++;
+                initGame();
+                nextLevelBtn.style.display = 'none';
+            });
+            
+            gameArea.addEventListener('touchstart', handleTouchStart, { passive: false });
+            gameArea.addEventListener('touchmove', handleTouchMove, { passive: false });
+            gameArea.addEventListener('touchend', handleTouchEnd);
+            
+            gameArea.addEventListener('mousedown', handleMouseDown);
+            gameArea.addEventListener('mousemove', handleMouseMove);
+            gameArea.addEventListener('mouseup', handleMouseUp);
+            
+            initGame();
+        });
+    </script>
+</body>
+</html>
