@@ -1,2 +1,2 @@
 # pipichu2025.github.io
-🎮 Super Brain Games - 腦力挑戰遊戲集 專注力訓練 • 記憶力挑戰 • 認知能力提升 開發者：pipichu
+🎮 Brain Challenge - 腦力挑戰遊戲集 專注力訓練 • 記憶力挑戰 • 認知能力提升 開發者：pipichu
